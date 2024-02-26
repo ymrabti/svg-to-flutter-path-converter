@@ -1,10 +1,7 @@
 class FlutterPath {
-    constructor(operations, color, opacity, paintType, strokeWidth, closed) {
+    constructor(operations, paintType, closed) {
         this.operations = operations;
-        this.color = color;
-        this.opacity = opacity;
         this.paintType = paintType;
-        this.strokeWidth = strokeWidth;
         this.closed = closed;
     }
 }

@@ -1,17 +1,9 @@
 const fs = require('fs')
-const { parse, stringify, parseSync } = require('svgson')
+const { parseSync } = require('svgson')
 const { optimize } = require('svgo');
 const svgUtils = require('./utils/svg_utils')
 const flutterPath = require('./flutter_path')
 const namedColors = require('color-name-list');
-
-class SvgNode {
-    constructor(name, type, attributes) {
-        this.name = name;
-        this.type = type;
-        this.attributes = attributes;
-    }
-}
 
 class SvgToFlutterPathConverter {
     static supportedShapeDefinitions = ['path', 'circle', 'rect'];
@@ -184,42 +176,6 @@ function getStrokeFromNode(node) {
     return '';
 }
 
-function colorStringToObject(value) {
-    if (value == 'none') {
-        return null;
-    }
-    if (value == null) {
-        return null;
-    }
-    if (value == '') {
-        return null;
-    }
-    let namedColor = namedColors.find(color => color.name.toLowerCase() === value.toLowerCase());
-    if (namedColor != null) {
-        return namedColor.hex.replace("#", "");
-    }
-
-    if (value[0] == '#' && value.length === 4) {
-        let color = value;
-        color = color.split("").map((item) => {
-            if (item == "#") { return item }
-            return item + item;
-        }).join("")
-
-        if (color[0] != "#") {
-            color = "#" + color;
-        }
-        return color.substr(1);
-    }
-    if (value[0] == '#') {
-        return value.substr(1);
-    }
-    return (value.match(/\d+/g)).map(function (o) {
-        let val = (o * 1).toString(16);
-        val = (val.length > 1) ? val : "0" + val;
-        return val;
-    }).join("")
-}
 
 function normalizeNumber(number) {
     return number.replace(/[^0-9]/g, '');
@@ -257,19 +213,12 @@ function shapesToFlutterCodeConverter(shapes, width, height, config) {
                 )
             );
 
-            let color = colorStringToObject(getFillFromNode(path.node));
-            let opacity = path.node.attributes.style['fill-opacity'] == '' ? null : path.node.attributes.style['fill-opacity'];
-            if (color == null) {
-                color = 'ffffff';
-                opacity = '1';
-            }
+
             if (path.node.attributes['fill'] != 'none') {
-                flutterPaths.push(new flutterPath.FlutterPath(pathOperations, color, opacity, flutterPath.PaintType.Fill));
+                flutterPaths.push(new flutterPath.FlutterPath(pathOperations, flutterPath.PaintType.Fill));
             }
             if (path.node.attributes['stroke'] != null) {
-                let strokeColor = colorStringToObject(getStrokeFromNode(path.node));
-                let strokeOpacity = path.node.attributes.style['stroke-opacity'] == '' ? null : path.node.attributes.style['stroke-opacity'];
-                flutterPaths.push(new flutterPath.FlutterPath(pathOperations, strokeColor, strokeOpacity, flutterPath.PaintType.Stroke));
+                flutterPaths.push(new flutterPath.FlutterPath(pathOperations, flutterPath.PaintType.Stroke));
             }
 
             return;
@@ -310,22 +259,15 @@ function shapesToFlutterCodeConverter(shapes, width, height, config) {
             }
         });
 
-        let color = colorStringToObject(getFillFromNode(path.node));
 
-        let opacity = path.node.attributes.style['fill-opacity'] == '' ? null : path.node.attributes.style['fill-opacity'];
-        if (color == null) {
-            opacity = '1';
-        }
 
         if (path.node.attributes['fill'] != 'none') {
-            flutterPaths.push(new flutterPath.FlutterPath(pathOperations, color, opacity, flutterPath.PaintType.Fill));
+            flutterPaths.push(new flutterPath.FlutterPath(pathOperations, flutterPath.PaintType.Fill));
         }
 
         if (path.node.attributes['stroke'] != null) {
-            let strokeColor = colorStringToObject(getStrokeFromNode(path.node));
-            let strokeOpacity = path.node.attributes.style['stroke-opacity'] == '' ? null : path.node.attributes.style['stroke-opacity'];
             let strokeWidth = path.node.attributes['stroke-width'] == '' ? null : path.node.attributes['stroke-width'];
-            flutterPaths.push(new flutterPath.FlutterPath(pathOperations, strokeColor, strokeOpacity, flutterPath.PaintType.Stroke, strokeWidth, path.closed));
+            flutterPaths.push(new flutterPath.FlutterPath(pathOperations, flutterPath.PaintType.Stroke, strokeWidth, path.closed));
         }
     });
 
